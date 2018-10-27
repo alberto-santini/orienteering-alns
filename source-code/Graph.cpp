@@ -18,7 +18,7 @@ namespace op {
     namespace fs = std::experimental::filesystem;
 
     Graph::Graph(fs::path graph_file) : graph_file{graph_file}, opi{graph_file.string()} {
-        n_vertices = opi->number_of_vertices();
+        n_vertices = n_reachable_vertices = opi->number_of_vertices();
         max_travel_time = opi->get_max_travel_time();
 
         for(auto i = 0u; i < n_vertices; ++i) {
@@ -36,7 +36,10 @@ namespace op {
 
         std::size_t edge_id = 0u;
         for(auto i = 0u; i < n_vertices; ++i) {
-            if(!g[i].reachable) { continue; }
+            if(!g[i].reachable) {
+                --n_reachable_vertices;
+                continue;
+            }
 
             for(auto j = i + 1; j < n_vertices; ++j) {
                 if(!g[j].reachable) { continue; }
@@ -87,11 +90,14 @@ namespace op {
         for(const auto& vertex : vertices) {
             boost::add_vertex(vertex, g);
         }
-        n_vertices = boost::num_vertices(g);
+        n_vertices = n_reachable_vertices = boost::num_vertices(g);
 
         std::size_t edge_id = 0u;
         for(auto i = 0u; i < n_vertices; ++i) {
-            if(!vertices[i].reachable) { continue; }
+            if(!vertices[i].reachable) {
+                --n_reachable_vertices;
+                continue;
+            }
 
             for(auto j = i + 1; j < n_vertices; ++j) {
                 if(!vertices[j].reachable) { continue; }

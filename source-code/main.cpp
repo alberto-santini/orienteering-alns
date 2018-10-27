@@ -1,5 +1,5 @@
 #include <experimental/filesystem>
-#include <po/ProgramOptions.hxx>
+#include <ProgramOptions.hxx>
 #include <as/console.h>
 #include <as/and_die.h>
 #include <as/containers.h>
@@ -132,6 +132,18 @@ namespace {
         }
     }
 
+    void time_cluster() {
+        using namespace std::chrono;
+
+        std::cout << console::notice << "Starting timed clustering...\n";
+        const auto start_time = high_resolution_clock::now();
+        Clustering{&inst_graph};
+        const auto end_time = high_resolution_clock::now();
+        std::cout << console::notice << "End timed clustering.\n\n";
+
+        std::cerr << inst_graph.instance_name() << "," << duration_cast<duration<float>>(end_time - start_time).count() << "\n";
+    }
+
     void print_solution() {
         ensure_flag("solution-file");
         ensure_flag("output-file");
@@ -245,7 +257,7 @@ namespace {
 int main(int argc, char** argv) {
     parser["action"]
         .abbreviation('a')
-        .description("Action to perform: [print-graph|print-clustered|print-solution|print-features|greedy|test-repair|alns]. Mandatory.")
+        .description("Action to perform: [print-graph|print-clustered|time-cluster|print-solution|print-features|greedy|test-repair|alns]. Mandatory.")
         .type(po::string);
 
     parser["output-file"]
@@ -302,6 +314,8 @@ int main(int argc, char** argv) {
         print_graph();
     } else if(action == "print-clustered") {
         print_clustered();
+    } else if(action == "time-cluster") {
+        time_cluster();
     } else if(action == "print-solution") {
         print_solution();
     } else if(action == "print-features") {
@@ -311,7 +325,7 @@ int main(int argc, char** argv) {
     } else if(action == "alns") {
         solve_alns();
     } else if(action == "test-repair") {
-        test_greedy_repair(1000, 150    );
+        test_greedy_repair(1000, 150);
     } else {
         std::cerr << console::error << "Unrecognised action: " << action << and_die();
     }

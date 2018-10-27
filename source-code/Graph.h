@@ -52,6 +52,11 @@ namespace op {
         std::size_t n_vertices;
 
         /**
+         * Number of reachable vertices in the graph.
+         */ 
+        std::size_t n_reachable_vertices;
+
+        /**
          * Smallest x coordinate for the vertices.
          */
         float min_x;

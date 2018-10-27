@@ -222,6 +222,13 @@ namespace op {
         bool is_travel_time_correct();
 
         /**
+         * Checks that the vertices and edges vectors agree.
+         * 
+         * @return True iff they agree.
+         */
+        bool are_edges_correct() const;
+
+        /**
          * Prints solution details to csv.
          */
         void to_csv(std::experimental::filesystem::path csv_file) const;

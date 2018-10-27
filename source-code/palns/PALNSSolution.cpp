@@ -11,7 +11,7 @@ namespace op {
     PALNSSolution::PALNSSolution(const Graph& graph, const PALNSProblemParams *const params) :
         graph{std::experimental::make_observer(&graph)},
         params{params},
-        tour{Tour()}
+        tour{Tour(&graph, std::vector<BoostVertex>{0u})}
     {
         for(const auto& vertex : as::graph::vertices(graph.g)) {
             if(!graph.g[vertex].depot &&
@@ -20,6 +20,8 @@ namespace op {
                 free_vertices.push_back(vertex);
             }
         }
+
+        assert(free_vertices.size() + tour.vertices.size() == graph.n_reachable_vertices);
     }
 
     PALNSSolution::PALNSSolution(Tour tour, const PALNSProblemParams *const params) :
@@ -37,6 +39,8 @@ namespace op {
                 free_vertices.push_back(vertex);
             }
         }
+
+        assert(free_vertices.size() + this->tour.vertices.size() == graph->n_reachable_vertices);
     }
 
     double PALNSSolution::getCost() const {
@@ -58,12 +62,17 @@ namespace op {
             free_vertices.push_back(vertex);
             assert(!tour.visits_vertex(vertex));
         }
+
+        assert(free_vertices.size() + tour.vertices.size() == graph->n_reachable_vertices);
     }
 
     bool PALNSSolution::remove_vertex_if_present(BoostVertex vertex) {
         if(tour.remove_vertex_if_present(vertex)) {
             free_vertices.push_back(vertex);
+
             assert(!tour.visits_vertex(vertex));
+            assert(free_vertices.size() + tour.vertices.size() == graph->n_reachable_vertices);
+
             return true;
         }
         return false;
@@ -89,6 +98,7 @@ namespace op {
 
         assert(tour.visits_vertex(vertex));
         assert(!contains(free_vertices, vertex));
+        assert(free_vertices.size() + tour.vertices.size() == graph->n_reachable_vertices);
     }
 
     namespace {
@@ -103,9 +113,9 @@ namespace op {
         std::vector<BoostVertex> removed_vertices;
 
         if(c_style_rand_01() < params->repair.restore_feasibility_optimal) {
-            tour.make_travel_time_feasible_optimal();
+            removed_vertices = tour.make_travel_time_feasible_optimal();
         } else {
-            tour.make_travel_time_feasible_naive();
+            removed_vertices = tour.make_travel_time_feasible_naive();
         }
 
         free_vertices.insert(
@@ -118,6 +128,7 @@ namespace op {
             removed_vertices.begin(), removed_vertices.end(),
             [&] (const BoostVertex& v) -> bool { return tour.visits_vertex(v); }
         ));
+        assert(free_vertices.size() + tour.vertices.size() == graph->n_reachable_vertices);
     }
 
     bool PALNSSolution::add_vertex_in_best_pos_feasible(BoostVertex vertex) {
@@ -140,6 +151,9 @@ namespace op {
         for(const auto& insertion : insertions) {
             if(tour.travel_time + insertion.increase_in_travel_time <= graph->max_travel_time) {
                 add_vertex(insertion.vertex, insertion.position);
+
+                assert(free_vertices.size() + tour.vertices.size() == graph->n_reachable_vertices);
+
                 return true;
             }
         }
@@ -169,6 +183,9 @@ namespace op {
         for(const auto& insertion : insertions) {
             if(tour.travel_time + insertion.increase_in_travel_time <= graph->max_travel_time) {
                 add_vertex(insertion.vertex, insertion.position);
+
+                assert(free_vertices.size() + tour.vertices.size() == graph->n_reachable_vertices);
+
                 return true;
             }
         }

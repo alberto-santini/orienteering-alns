@@ -184,12 +184,12 @@ namespace op {
         // Get the distance of each vertex to its nearest neighbour.
         const auto distances = nearest_neighbour_distances(g);
 
-        // Get the smallest distance.
+        // Get the largest distance.
         const auto radius = distances.back();
 
         std::cout << as::console::notice << "DBSCAN auto-tuned radius: " << radius << std::endl;
 
-        // Now we know that 95% of the vertices have their nearest
+        // Now we know that all the vertices have their nearest
         // neighbour within this radius. We now check how many points
         // lie within each vertex's neighbourhood, using this radius.
         // In other words, we want to know how many points will be

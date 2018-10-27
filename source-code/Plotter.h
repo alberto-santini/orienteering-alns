@@ -8,7 +8,7 @@
 #include "Graph.h"
 #include "Tour.h"
 #include <experimental/filesystem>
-#include <cimg/CImg.h>
+#include <CImg.h>
 
 namespace op {
     /**

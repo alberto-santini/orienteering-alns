@@ -165,6 +165,9 @@ namespace op {
 
     void Tour::calculate_edges_from_vertices() {
         edges.clear();
+
+        if(vertices.size() == 1u) { return; }
+
         edges.reserve(vertices.size());
 
         for(auto i = 0u; i < vertices.size(); ++i) {
@@ -176,14 +179,18 @@ namespace op {
     }
 
     void Tour::calculate_travel_time() {
-        travel_time = std::accumulate(
-          edges.begin(),
-          edges.end(),
-          0.0f,
-          [this] (float acc, const BoostEdge& edge) -> float {
-              return acc + graph->g[edge].travel_time;
-          }
-        );
+        if(edges.empty()) {
+            travel_time = 0.0f;
+        } else {
+            travel_time = std::accumulate(
+            edges.begin(),
+            edges.end(),
+            0.0f,
+            [this] (float acc, const BoostEdge& edge) -> float {
+                return acc + graph->g[edge].travel_time;
+            }
+            );
+        }
     }
 
     void Tour::calculate_total_prize() {
@@ -202,9 +209,46 @@ namespace op {
     }
 
     bool Tour::is_travel_time_correct() {
+        if(edges.size() == 0u) {
+            return travel_time == 0.0f;
+        }
+
         const auto old_tt = travel_time;
         calculate_travel_time();
-        return std::abs(old_tt - travel_time) < 0.5;
+
+        // 1% gap
+        return std::abs(old_tt - travel_time) / travel_time < 0.01;
+    }
+
+    bool Tour::are_edges_correct() const {
+        if(edges.empty()) {
+            return vertices.size() == 1u && vertices[0] == 0u;
+        }
+
+        if(edges.size() != vertices.size()) {
+            return false;
+        }
+
+        for(auto i = 0u; i < edges.size() - 1u; ++i) {
+            const auto s = boost::source(edges[i], graph->g);
+            const auto t = boost::target(edges[i], graph->g);
+            
+            if(s != vertices[i]) { return false; }
+            if(t != vertices[i + 1]) { return false; }
+        }
+
+        const auto last_edge = edges.back();
+        const auto last_vertex = vertices.back();
+
+        if(boost::source(last_edge, graph->g) != last_vertex) {
+            return false;
+        }
+
+        if(boost::target(last_edge, graph->g) != 0u) {
+            return false;
+        }
+
+        return true;
     }
 
     std::ostream& operator<<(std::ostream& out, const Tour& tour) {
@@ -218,6 +262,7 @@ namespace op {
     void Tour::do_2opt() {
         assert(is_simple());
         assert(is_travel_time_correct());
+        assert(are_edges_correct());
         assert(boost::source(edges.front(), graph->g) == 0u);
         assert(boost::target(edges.back(), graph->g) == 0u);
 
@@ -269,6 +314,7 @@ namespace op {
 
         assert(is_simple());
         assert(is_travel_time_correct());
+        assert(are_edges_correct());
         assert(boost::source(edges.front(), graph->g) == 0u);
         assert(boost::target(edges.back(), graph->g) == 0u);
     }
@@ -276,6 +322,7 @@ namespace op {
     std::vector<BoostVertex> Tour::make_travel_time_feasible_optimal() {
         assert(is_simple());
         assert(is_travel_time_correct());
+        assert(are_edges_correct());
         assert(boost::source(edges.front(), graph->g) == 0u);
         assert(boost::target(edges.back(), graph->g) == 0u);
 
@@ -343,6 +390,7 @@ namespace op {
 
         assert(is_simple());
         assert(is_travel_time_correct());
+        assert(are_edges_correct());
         assert(boost::source(edges.front(), graph->g) == 0u);
         assert(boost::target(edges.back(), graph->g) == 0u);
 
@@ -351,6 +399,7 @@ namespace op {
 
     std::vector<BoostVertex> Tour::make_travel_time_feasible_naive() {
         assert(is_travel_time_correct());
+        assert(are_edges_correct());
         assert(boost::source(edges.front(), graph->g) == 0u);
         assert(boost::target(edges.back(), graph->g) == 0u);
 
@@ -391,6 +440,7 @@ namespace op {
         }
 
         assert(is_travel_time_correct());
+        assert(are_edges_correct());
         assert(boost::source(edges.front(), graph->g) == 0u);
         assert(boost::target(edges.back(), graph->g) == 0u);
 
@@ -403,15 +453,17 @@ namespace op {
         assert(vertex_it != vertices.begin()); // The depot.
         assert(vertex_it != vertices.end());
         assert(is_travel_time_correct());
+        assert(are_edges_correct());
         assert(boost::source(edges.front(), graph->g) == 0u);
         assert(boost::target(edges.back(), graph->g) == 0u);
 
-        // We don't remove the vertex, if it's the only
-        // non-depot vertex... otherwise the tour would
-        // become degenerate.
-        if(vertices.size() <= 2u) {
-            std::cerr << warning << "Trying to remove the only non-depot vertex of a tour. Ignoring the request." << std::endl;
+        if(vertices.size() == 1u) {
             return false;
+        }
+
+        if(vertices.size() == 2u) {
+            *this = Tour(graph.get(), std::vector<BoostVertex>{0u});
+            return true;
         }
 
         auto vertex = *vertex_it;
@@ -452,6 +504,7 @@ namespace op {
         assert(boost::source(edges.front(), graph->g) == 0u);
         assert(boost::target(edges.back(), graph->g) == 0u);
         assert(is_travel_time_correct());
+        assert(are_edges_correct());
 
         return true;
     }
@@ -485,65 +538,92 @@ namespace op {
         using namespace as::containers;
 
         assert(is_travel_time_correct());
+        assert(are_edges_correct());
         assert(position < vertices.size());
         assert(!contains(vertices, vertex));
         assert(!graph->g[vertex].depot);
         assert(graph->g[vertex].reachable);
-        assert(boost::source(edges.front(), graph->g) == 0u);
-        assert(boost::target(edges.back(), graph->g) == 0u);
+        
+        assert(edges.empty() || boost::source(edges.front(), graph->g) == 0u);
+        assert(edges.empty() || boost::target(edges.back(), graph->g) == 0u);
 
-        const auto vertex_before = vertices[position];
-        const auto vertex_after = vertices[(position + 1u) % vertices.size()];
+        if(vertices.size() == 1u) {
+            assert(vertices[0] == 0u); // Only contains the depot
+            vertices.push_back(vertex);
 
-        const auto remove_edge = boost::edge(vertex_before, vertex_after, graph->g).first;
-        auto remove_edge_it = std::find(edges.begin(), edges.end(), remove_edge);
+            assert(edges.size() == 0u);
 
-        // In the case the tour is a loop, we would have:
-        // (0, v) -- (v, 0)
-        // The edge we want to remove is (v, 0) when we
-        // insert the new vertex in position 1, i.e. after
-        // v. However, since edges are not oriented, we are
-        // finding (0, v). So, we need to manually increment
-        // this iterator to point to the correct back-edge.
-        if(edges.size() == 2u && position == 1u) {
-            ++remove_edge_it;
+            const auto one_way = boost::edge(0u, vertex, graph->g);
+            const auto other_way = boost::edge(vertex, 0u, graph->g);
+
+            assert(one_way.second);
+            assert(other_way.second);
+
+            edges.push_back(one_way.first);
+            edges.push_back(other_way.first);
+
+            travel_time = graph->g[one_way.first].travel_time;
+            travel_time += graph->g[other_way.first].travel_time;
+
+            total_prize = graph->g[vertex].prize;
+
+            assert(is_travel_time_correct());
+        } else {
+            const auto vertex_before = vertices[position];
+            const auto vertex_after = vertices[(position + 1u) % vertices.size()];
+
+            const auto remove_edge = boost::edge(vertex_before, vertex_after, graph->g).first;
+            auto remove_edge_it = std::find(edges.begin(), edges.end(), remove_edge);
+
+            // In the case the tour is a loop, we would have:
+            // (0, v) -- (v, 0)
+            // The edge we want to remove is (v, 0) when we
+            // insert the new vertex in position 1, i.e. after
+            // v. However, since edges are not oriented, we are
+            // finding (0, v). So, we need to manually increment
+            // this iterator to point to the correct back-edge.
+            if(edges.size() == 2u && position == 1u) {
+                ++remove_edge_it;
+            }
+
+            assert(remove_edge_it != edges.end());
+
+            const auto ne1 = boost::edge(vertex_before, vertex, graph->g);
+            const auto ne2 = boost::edge(vertex, vertex_after, graph->g);
+
+            assert(ne1.second && ne2.second);
+
+            // Insert the new vertex:
+            // (We use position as the index of the vertex after which
+            // the new vertex is inserted; vector::insert, on the other
+            // hand, wants an iterator to the item before which the new
+            // item is inserted. Hence, we add 1 to position.)
+            vertices.insert(vertices.begin() + position + 1, vertex);
+
+            // If we are removing the first edge, make sure the one we are
+            // replacing it with starts at the depot!
+            assert(remove_edge_it != edges.begin() || vertex_before == 0u);
+
+            // Subsitute the the old edge with the first of the two new edges:
+            *remove_edge_it = ne1.first;
+
+            // Add the second of the two new edges:
+            edges.insert(remove_edge_it + 1, ne2.first);
+
+            // Update travel time:
+            travel_time -= graph->g[remove_edge].travel_time;
+            travel_time += graph->g[ne1.first].travel_time;
+            travel_time += graph->g[ne2.first].travel_time;
+
+            // Update prize:
+            total_prize += graph->g[vertex].prize;
         }
 
-        assert(remove_edge_it != edges.end());
-
-        const auto ne1 = boost::edge(vertex_before, vertex, graph->g);
-        const auto ne2 = boost::edge(vertex, vertex_after, graph->g);
-
-        assert(ne1.second && ne2.second);
-
-        // Insert the new vertex:
-        // (We use position as the index of the vertex after which
-        // the new vertex is inserted; vector::insert, on the other
-        // hand, wants an iterator to the item before which the new
-        // item is inserted. Hence, we add 1 to position.)
-        vertices.insert(vertices.begin() + position + 1, vertex);
-
-        // If we are removing the first edge, make sure the one we are
-        // replacing it with starts at the depot!
-        assert(remove_edge_it != edges.begin() || vertex_before == 0u);
-
-        // Subsitute the the old edge with the first of the two new edges:
-        *remove_edge_it = ne1.first;
-
-        // Add the second of the two new edges:
-        edges.insert(remove_edge_it + 1, ne2.first);
-
-        // Update travel time:
-        travel_time -= graph->g[remove_edge].travel_time;
-        travel_time += graph->g[ne1.first].travel_time;
-        travel_time += graph->g[ne2.first].travel_time;
-
-        // Update prize:
-        total_prize += graph->g[vertex].prize;
-
+        assert(!edges.empty());
         assert(boost::source(edges.front(), graph->g) == 0u);
         assert(boost::target(edges.back(), graph->g) == 0u);
         assert(is_travel_time_correct());
+        assert(are_edges_correct());
     }
 
     VertexRemovalPrice Tour::price_vertex_removal(std::size_t position) const {

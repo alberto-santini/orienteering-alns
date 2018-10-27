@@ -41,10 +41,16 @@ namespace op {
          */
         Tour solve() const;
 
+        /**
+         * Produce a greedy heuristic solution, without using the graph clustering.
+         * 
+         * @return  The greedy solution.
+         */
+        Tour solve_without_clustering() const;
+
     private:
         Tour solve_with_clustering_and_mip(ReducedGraph& red) const;
         Tour solve_with_clustering_constructive(ReducedGraph& red) const;
-        Tour solve_without_clustering() const;
     };
 }
 

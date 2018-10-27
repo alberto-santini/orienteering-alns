@@ -38,7 +38,8 @@ namespace op {
 
     PALNSProblemParams::InitialSolutionParams::InitialSolutionParams() :
         use_clustering{true},
-        use_mip{false}
+        use_mip{false},
+        vertex_order{"random"}
     {}
 
     PALNSProblemParams::LocalSearchParams::LocalSearchParams() :
@@ -74,6 +75,8 @@ namespace op {
 
         READPARAM(initial_solution.use_clustering, bool)
         READPARAM(initial_solution.use_mip, bool)
+        READPARAM(initial_solution.local_search, bool)
+        READPARAM(initial_solution.vertex_order, std::string)
 
         READPARAM(local_search.use_2opt, bool)
         READPARAM(local_search.use_tsp, bool)

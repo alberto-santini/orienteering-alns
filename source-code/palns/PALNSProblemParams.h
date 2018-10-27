@@ -89,6 +89,16 @@ namespace op {
              */
             bool use_mip;
 
+            /**
+             * Do local search on the initial solution?
+             */
+            bool local_search;
+
+            /**
+             * Order of the vertices for the greedy heuristic.
+             */
+            std::string vertex_order;
+
             InitialSolutionParams();
         };
 
