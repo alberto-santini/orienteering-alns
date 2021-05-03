@@ -48,7 +48,7 @@ cp CImg/CImg.h third_party/
 ##### 4. The [ProgramOptions.hxx](https://github.com/Fytch/ProgramOptions.hxx) library.
 
 ```{sh}
-wget https://raw.githubusercontent.com/Fytch/ProgramOptions.hxx/master/include/ProgramOptions.hxx -P thrird_party
+wget https://raw.githubusercontent.com/Fytch/ProgramOptions.hxx/master/include/ProgramOptions.hxx -P third_party
 ```
 
 ##### 5. My own library of miscellaneous utilities, called AS and [available on GitHub](https://github.com/alberto-santini/as).
