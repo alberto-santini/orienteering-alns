@@ -140,7 +140,7 @@ namespace op {
             auto e1 = boost::edge(vertices[0u], vertices[1u], g.g).first;
             auto e2 = boost::edge(vertices[1u], vertices[2u], g.g).first;
             auto e3 = boost::edge(vertices[2u], vertices[0u], g.g).first;
-            return Tour(&g, {e1, e2, e3});
+            return Tour(&g, std::vector<BoostEdge>({e1, e2, e3}));
         }
 
         auto lkhinst = generate_lkh_params(g, vertices, unique_name);
