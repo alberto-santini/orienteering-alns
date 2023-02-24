@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Santini"
+  given-names: "Alberto"
+  orcid: "https://orcid.org/0000-0002-0440-0357"
+title: "Adaptive Large Neighbourhood Search for the Orienteering Problem"
+version: 0.0.2
+doi: 10.5281/zenodo.1472850
+date-released: 2018-10-27
+url: "https://github.com/alberto-santini/orienteering-alns/"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Santini"
+    given-names: "Alberto"
+    orcid: "https://orcid.org/0000-0002-0440-0357"
+  doi: 10.1016/j.eswa.2018.12.050
+  journal: "Expert Systems with Applications"
+  title: "An Adaptive Large Neighbourhood Search algorithm for the Orienteering Problem"
+  year: 2019
+  volume: 123
+  start: 154
+  end: 167
